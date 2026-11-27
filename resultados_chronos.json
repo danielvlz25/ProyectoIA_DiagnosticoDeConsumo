@@ -1,0 +1,35 @@
+{
+  "H1": {
+    "ultima_lectura": "2016-02-15 06:50:00",
+    "objetivo": "2016-02-15 07:00:00",
+    "lecturas_contexto": 144,
+    "contexto_continuo": true,
+    "dias_previos_disponibles": 14,
+    "referencia": 50.0,
+    "P10": 25.48333740234375,
+    "P50": 37.646514892578125,
+    "P90": 52.723731994628906
+  },
+  "H2": {
+    "ultima_lectura": "2016-03-15 13:50:00",
+    "objetivo": "2016-03-15 14:00:00",
+    "lecturas_contexto": 144,
+    "contexto_continuo": true,
+    "dias_previos_disponibles": 14,
+    "referencia": 70.0,
+    "P10": 40.630714416503906,
+    "P50": 53.58556365966797,
+    "P90": 106.18601989746094
+  },
+  "H3": {
+    "ultima_lectura": "2016-04-15 18:40:00",
+    "objetivo": "2016-04-15 18:50:00",
+    "lecturas_contexto": 144,
+    "contexto_continuo": true,
+    "dias_previos_disponibles": 14,
+    "referencia": 125.0,
+    "P10": 59.669029235839844,
+    "P50": 111.30998229980469,
+    "P90": 258.9930419921875
+  }
+}
