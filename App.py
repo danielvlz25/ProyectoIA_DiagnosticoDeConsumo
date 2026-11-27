@@ -8,7 +8,7 @@ import pandas as pd
 import streamlit as st
 
 import logica_difusa as ld
-from pronostico import CORTES_HISTORICOS, cargar_chronos, cargar_serie, obtener_corte, pronosticar
+from pronostico import CORTES_HISTORICOS, PASO, cargar_chronos, cargar_serie, obtener_corte, pronosticar
 from recomendaciones import REGLAS_RECOMENDACION, evaluar_recomendaciones
 
 st.set_page_config(page_title="Diagnóstico de consumo eléctrico", layout="wide")
@@ -255,9 +255,32 @@ elif modo == "Pruebas controladas (C1–C5)":
 elif modo == "Corte libre (dataset real)":
     st.write("Elige cualquier corte del dataset (por ejemplo, el del caso de traslape que "
              "encontró `buscar_traslape.py`).")
-    texto = st.text_input("Última lectura disponible (como aparece en date)",
-                          "2016-02-15 06:50:00")
-    flujo_historico("libre", texto)
+    try:
+        serie_libre = _serie(ruta)
+    except FileNotFoundError:
+        st.error(f"No se encontró el dataset en «{ruta}». Coloca train.parquet en la "
+                 "carpeta data/ o cambia la ruta en la barra lateral.")
+        st.stop()
+    # Rango válido: debe existir la lectura a pronosticar y las de los 14 días previos
+    primera = serie_libre.index.min() + pd.Timedelta(days=14) - PASO
+    ultima_max = serie_libre.index.max() - PASO
+    col_f, col_h = st.columns(2)
+    fecha = col_f.date_input("Fecha de la última lectura disponible",
+                             value=pd.Timestamp("2016-02-15").date(),
+                             min_value=primera.date(), max_value=ultima_max.date())
+    del_dia = serie_libre.index[(serie_libre.index.normalize() == pd.Timestamp(fecha))
+                                & (serie_libre.index >= primera)
+                                & (serie_libre.index <= ultima_max)]
+    horas = [t.strftime("%H:%M") for t in del_dia]
+    if not horas:
+        st.warning("Esa fecha no tiene cortes válidos. Elige otra.")
+        st.stop()
+    hora = col_h.selectbox("Hora de la última lectura (cada 10 minutos)", horas,
+                           index=horas.index("06:50") if "06:50" in horas else 0)
+    ultima_texto = f"{fecha} {hora}:00"
+    st.write(f"Se pronosticará la lectura de las "
+             f"**{(pd.Timestamp(ultima_texto) + PASO).strftime('%d/%m/%Y %H:%M')}**.")
+    flujo_historico(f"libre_{ultima_texto}", ultima_texto)
 
 else:
     st.subheader("Funciones de pertenencia")
