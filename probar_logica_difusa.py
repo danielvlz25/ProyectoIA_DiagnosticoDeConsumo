@@ -16,12 +16,19 @@ for n, (a, b, c, r) in casos.items():
           f"prioridad={res.prioridad:.2f} ({res.etiqueta}) "
           f"reglas={[(r.numero, round(r.fuerza, 3)) for r in res.reglas_activas]}")
 
-print("\nTraslape: exceso=20, amplitud=65")
-res = inferir(20, 65)
-print(res.grados_exceso, res.grados_amplitud)
-for r in res.reglas_activas:
-    print(r)
-print(res.prioridad, res.etiqueta)
+# Caso de traslape: se calcula SOLO con un corte real del dataset (salida de
+# buscar_traslape.py). Uso:  python probar_logica_difusa.py P10 P50 P90 REFERENCIA
+import sys
+if len(sys.argv) == 5:
+    p10, p50, p90, ref = map(float, sys.argv[1:])
+    res = calcular_prioridad(p10, p50, p90, ref)
+    print("\nTraslape (corte real):", f"exceso={res.exceso:.2f} amp={res.amplitud:.2f}")
+    print(res.grados_exceso, res.grados_amplitud)
+    for r in res.reglas_activas:
+        print(r)
+    print(res.prioridad, res.etiqueta)
+else:
+    print("\n(Caso de traslape omitido: pasa P10 P50 P90 REFERENCIA de un corte real)")
 
 # todo valor valido debe activar al menos una regla
 for e in [0, 5, 10, 30, 50, 70, 100, 500]:
