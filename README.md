@@ -12,7 +12,7 @@ sugiere acciones de ahorro respaldadas por publicaciones de la **CFE**.
 - Modelo: [Chronos-Bolt Tiny](https://huggingface.co/amazon/chronos-bolt-tiny) (`amazon/chronos-bolt-tiny`).
   Se descarga automáticamente la primera vez que se ejecuta.
 - Dataset: Smart Home Appliance Energy Prediction (Hugging Face), partición `train`.
-  Se usan solo las columnas `date` y `Appliances`. Enlace: `<PEGAR AQUÍ EL ENLACE DEL DATASET>`.
+  Se usan solo las columnas `date` y `Appliances`. Enlace: `<https://huggingface.co/datasets/hoangbang/smart-home-energy-prediction>`.
 - Ficha del conjunto original en UCI: <https://archive.ics.uci.edu/dataset/374/appliances+energy+prediction>
 - Fuentes de las recomendaciones (CFE): *Somos más que ahorro* y *¡Y se hizo la luz!*.
   Enlaces: `<https://app.cfe.mx/Libros/LIBRO_Somos_mas_que_ahorro.pdf> <https://app.cfe.mx/Libros/LIBRO_se_hizo_la_luz.pdf>  `.
