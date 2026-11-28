@@ -1,3 +1,8 @@
+INTEGRANTES:
+-EDER JOHAN ACOSTA QUEVEDO
+-JOSE DANIEL VALENZUELA ARENAS
+
+
 # Diagnóstico del consumo eléctrico con lógica difusa
 
 Proyecto de Inteligencia Artificial · Tecnológico Nacional de México, Campus Culiacán.
