@@ -102,13 +102,41 @@ def graficar_funciones(exceso=None, amplitud=None):
 
 
 # ------------------------------------------------------------------- resultados
-def mostrar_diagnostico(p10, p50, p90, referencia, hechos, lecturas=144):
+def graficar_pronostico(corte, p, real=None):
+    """Últimas 24 h de lecturas, pronóstico P10-P50-P90 y consumo habitual."""
+    p10, p50, p90 = p
+    fig, eje = plt.subplots(figsize=(11, 3.4))
+    eje.plot(corte.contexto.index, corte.contexto.values, color="tab:blue", lw=1.5,
+             label="Lecturas (últimas 24 h, 144 lecturas)")
+    if corte.referencia is not None:
+        eje.axhline(corte.referencia, color="gray", ls="--", lw=1.2,
+                    label=f"Consumo habitual ({corte.referencia:.0f} Wh)")
+    eje.errorbar([corte.objetivo], [p50], yerr=[[p50 - p10], [p90 - p50]], fmt="o",
+                 color="tab:orange", capsize=6, lw=2, label="Pronóstico P50 con banda P10–P90")
+    if real is not None:
+        eje.plot([corte.objetivo], [real], "k*", ms=14, label=f"Lectura real ({real:.0f} Wh)")
+    eje.set_ylabel("Appliances (Wh por 10 min)")
+    eje.set_title(f"Pronóstico para {corte.objetivo:%d/%m/%Y %H:%M}")
+    eje.grid(alpha=0.3)
+    eje.legend(loc="upper left", fontsize=8)
+    fig.autofmt_xdate()
+    fig.tight_layout()
+    return fig
+
+
+def mostrar_diagnostico(p10, p50, p90, referencia, hechos, lecturas=144, figura=None):
     st.subheader("Pronóstico y consumo habitual")
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("P10 (bajo)", f"{p10:.1f} Wh")
     c2.metric("P50 (central)", f"{p50:.1f} Wh")
     c3.metric("P90 (alto)", f"{p90:.1f} Wh")
     c4.metric("Consumo habitual", "Sin dato" if referencia is None else f"{referencia:.1f} Wh")
+    st.caption("Wh = energía de los electrodomésticos en un intervalo de 10 minutos. "
+               "P10/P50/P90: hay 10 %, 50 % y 90 % de probabilidad de que el consumo sea "
+               "menor o igual a ese valor. El consumo habitual es la mediana de la misma "
+               "hora en los 14 días anteriores.")
+    if figura is not None:
+        st.pyplot(figura)
 
     res = ld.calcular_prioridad(p10, p50, p90, referencia, lecturas)
     if res.prioridad is None:
@@ -118,8 +146,8 @@ def mostrar_diagnostico(p10, p50, p90, referencia, hechos, lecturas=144):
         c1, c2, c3 = st.columns(3)
         c1.metric("Exceso", f"{res.exceso:.1f} %")
         c2.metric("Amplitud relativa", f"{res.amplitud:.1f} %")
-        c3.metric("Prioridad (0-100)", f"{res.prioridad:.1f}", res.etiqueta.upper(),
-                  delta_color="off")
+        c3.metric("Prioridad (0-100)", f"{res.prioridad:.1f}")
+        c3.markdown(f"**Nivel: {res.etiqueta.upper()}**")
         _explicar(res)
         st.pyplot(graficar_funciones(res.exceso, res.amplitud))
         st.caption(f"Escala: baja < {ld.CORTE_MEDIA}, media de {ld.CORTE_MEDIA} a "
@@ -220,16 +248,35 @@ def flujo_historico(clave, ultima):
              f"(continuas: {'sí' if corte.continuo else 'no'}) · días previos con lectura: "
              f"{len(corte.previos)}/14")
     lecturas = len(corte.contexto) if corte.continuo else 0
-    mostrar_diagnostico(p10, p50, p90, corte.referencia, hechos, lecturas)
+    mostrar_diagnostico(p10, p50, p90, corte.referencia, hechos, lecturas,
+                        figura=graficar_pronostico(corte, (p10, p50, p90)))
 
     st.divider()
     if st.button("Revelar lectura real y comparar", key=f"rev_{clave}"):
+        st.session_state[f"revelado_{clave}"] = True
+    if st.session_state.get(f"revelado_{clave}"):
         real = float(serie.loc[corte.objetivo])
         ultima_v = float(corte.contexto.iloc[-1])
+        hora_ult = corte.ultima_lectura.strftime("%H:%M")
+        hora_obj = corte.objetivo.strftime("%H:%M")
+        err_chronos, err_base = abs(p50 - real), abs(ultima_v - real)
+        st.subheader("Comparación con la lectura real")
         c1, c2, c3 = st.columns(3)
-        c1.metric("Lectura real", f"{real:.0f} Wh")
-        c2.metric("Error Chronos |P50 − real|", f"{abs(p50 - real):.2f} Wh")
-        c3.metric("Error de la última lectura", f"{abs(ultima_v - real):.2f} Wh")
+        c1.metric(f"Última lectura conocida ({hora_ult})", f"{ultima_v:.0f} Wh")
+        c2.metric(f"Lectura real ({hora_obj})", f"{real:.0f} Wh")
+        c3.metric("Consumo habitual", "Sin dato" if corte.referencia is None
+                  else f"{corte.referencia:.0f} Wh")
+        c1, c2 = st.columns(2)
+        c1.metric("Error de Chronos |P50 − real|", f"{err_chronos:.2f} Wh")
+        c2.metric(f"Error de repetir la última lectura |{ultima_v:.0f} − {real:.0f}|",
+                  f"{err_base:.2f} Wh")
+        dentro = p10 <= real <= p90
+        st.write(f"La lectura real **{'sí' if dentro else 'no'}** quedó dentro de la banda "
+                 f"P10–P90 ({p10:.1f} a {p90:.1f} Wh). "
+                 + ("Chronos fue más cercano que repetir la última lectura."
+                    if err_chronos < err_base else
+                    "Repetir la última lectura fue igual o más cercano que Chronos."))
+        st.pyplot(graficar_pronostico(corte, (p10, p50, p90), real=real))
 
 
 if modo == "Históricos (H1–H3)":
